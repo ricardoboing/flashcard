@@ -1,0 +1,67 @@
+<html>
+<head>
+	<title>FlashCard</title>
+
+	<style type="text/css">
+		div.center {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100%;
+		}
+		span.card {
+			font-size: 1000%;
+			color: rgb(200,0,0);
+		}
+		span.meaning {
+			font-size: 500%;
+			color: rgb(0,0,200);
+		}
+		span {
+			font-weight: bold;
+		}
+		div#flashcard {
+			margin: 0 auto;
+			display: flex;
+			align-items: center;
+			text-align: center;
+			flex-direction: column;
+		}
+		div.main {
+			margin: 0 auto;
+			display: flex;
+			flex: 0;
+			height: 100%;
+			justify-content: center;
+			align-items: center;
+		}
+		input {
+			width: 600px;
+			height: 70px;
+			font-size: 50px;
+			border-color: black;
+			border-width: 3px;
+			border-style: solid;
+			color: black;
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+	<div class="main">
+		<div id="flashcard">
+			<div>
+				<span class="card">START</span>
+			</div>
+			<div>
+				<span class="meaning">-----</span>
+			</div>
+			<div>
+				<input id="answer" type="text" autocomplete="off">
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+</script>
+</html>
