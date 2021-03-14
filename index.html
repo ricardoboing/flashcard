@@ -9,12 +9,17 @@
 			align-items: center;
 			height: 100%;
 		}
-		span.card {
+		span#card {
 			font-size: 1000%;
 			color: rgb(200,0,0);
 		}
-		span.meaning {
+		span#meaning {
 			font-size: 500%;
+		}
+		span#meaning.hide {
+			color: white;
+		}
+		span#meaning.visible {
 			color: rgb(0,0,200);
 		}
 		span {
@@ -35,6 +40,9 @@
 			justify-content: center;
 			align-items: center;
 		}
+		div.meaning {
+			background-color: white;
+		}
 		input {
 			width: 600px;
 			height: 70px;
@@ -45,23 +53,226 @@
 			color: black;
 			text-align: center;
 		}
+		input.wrong {
+			border: thick solid yellow;
+			color: yellow;
+			outline-color: rgb(215,215,0);
+		}
+		input.correct {
+			border: thick solid blue;
+			color: blue;
+			outline: none;
+		}
+		input.not_answered {
+			outline-color: rgb(20,20,20);
+		}
 	</style>
 </head>
 <body>
 	<div class="main">
 		<div id="flashcard">
 			<div>
-				<span class="card">START</span>
+				<span id="card">START</span>
+			</div>
+			<div class="meaning">
+				<span id="meaning">-----</span>
 			</div>
 			<div>
-				<span class="meaning">-----</span>
-			</div>
-			<div>
-				<input id="answer" type="text" autocomplete="off">
+				<input id="answer" class="not_answered" type="text" autocomplete="off">
 			</div>
 		</div>
 	</div>
 </body>
+<!--
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+
+<script type="text/babel">
+
+</script>
+-->
 <script type="text/javascript">
+	var deck = [
+		["Again", "De novo/Novamente", 0],
+		["Blue", "Azul", 0],
+		["Black", "Preto", 0],
+		["Yellow", "Amarelo", 0]
+	];
+
+	shuffleArray(deck);
+
+	var card = document.getElementById("card");
+	var meaning = document.getElementById("meaning");
+	var answer = document.getElementById("answer");
+	
+	var pointer = -1;
+	var limitInf = 0;
+	var limitSup = deck.length;
+	
+	var showMeaning = false;
+
+	function get_answers() {
+		var answerdeck = answer.value.toLowerCase();
+		return answerdeck.split("/");
+	}
+	function get_meanings() {
+		var meaningdeck = meaning.innerText.toLowerCase();
+		return meaningdeck.split("/");
+	}
+
+	function is_answered() {
+		if (answer.value == "") {
+			return false;
+		}
+		return true;
+	}
+
+	function update_card() {
+		if (pointer == limitSup) {
+			card.innerText = "END";
+			meaning.innerText = "---";
+			return;
+		}
+
+		card.innerText = deck[pointer][0];
+		meaning.innerText = deck[pointer][1];
+	}
+	function add_class(_element, _class) {
+		_element.classList.add(_class);
+	}
+	function remove_class(_element, _class) {
+		_element.classList.remove(_class);
+	}
+	
+	function set_corret_answer() {
+		add_class(answer, "correct");
+		remove_class(answer, "wrong");
+		remove_class(answer, "not_answered");
+	}
+	function set_wrong_answer() {
+		remove_class(answer, "correct");
+		add_class(answer, "wrong");
+		remove_class(answer, "not_answered");
+	}
+	function clear_answer() {
+		answer.value = "";
+
+		remove_class(answer, "correct");
+		remove_class(answer, "wrong");
+		add_class(answer, "not_answered");
+	}
+
+	function show_meaning() {
+		add_class(meaning, "visible");
+		remove_class(meaning, "hide");
+		showMeaning = true;
+	}
+	function hide_meaning() {
+		add_class(meaning, "hide");
+		remove_class(meaning, "visible");
+		showMeaning = false;
+		verifyAnswer = false;		
+	}
+	
+	function previous_word() {
+		pointer--;
+		if (pointer < limitInf) {
+			pointer = limitInf;
+		}
+		clear_answer();
+		hide_meaning();
+		update_card();
+	}
+	function next_word() {
+		pointer++;
+		if (pointer > limitSup) {
+			pointer = limitSup;
+			return;
+		}
+		clear_answer();
+		hide_meaning();
+		update_card();
+	}
+
+	// Algoritmo was get in the web
+	function shuffleArray(_array) {
+		for (var i = _array.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var temp = _array[i];
+			_array[i] = _array[j];
+			_array[j] = temp;
+		}
+	}
+
+
+
+
+
+	function verify_answer() {
+		answers = get_answers();
+		meanings = get_meanings();
+
+		var correct = false;
+
+		for (var i = 0; i < answers.length; i++) {
+			correct = false;
+			for (var j = 0; j < meanings.length; j++) {
+				if (answers[i] == meanings[j]) {
+					correct = true;
+					break;
+				}
+			}
+			
+			if (!correct) {
+				return false;
+			}
+		}
+
+		if (!correct) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+	function eventFunction(_event) {
+		if (_event.key == "Enter" && !is_answered()) {
+			return;
+		}
+		if (_event.key == "ArrowDown" || _event.key == "Enter") {
+			if (pointer == limitSup) {
+				return;
+			}
+			if (pointer == -1) { // Start
+				next_word();
+				return;
+			}
+			
+			if (!showMeaning) {
+				show_meaning();
+				var correctAnswer = verify_answer();
+
+				if (correctAnswer) {
+					set_corret_answer();
+					deck[pointer][2] = 1;
+					return;
+				}
+
+				set_wrong_answer();
+				deck[pointer][2] = 0;
+				return;
+			}
+			console.log(deck[0], deck[1], deck[2], deck[3]);
+			next_word();
+		}
+		if (_event.key == "ArrowUp") {
+			previous_word();
+		}
+	}
+
+	window.addEventListener("keyup", eventFunction);
 </script>
 </html>
