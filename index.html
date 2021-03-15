@@ -9,6 +9,22 @@
 			align-items: center;
 			height: 100%;
 		}
+		button {
+			float: left;
+			padding: 15px 20px;
+			font-weight: bold;
+		}
+		button.green {
+			background-color: green;
+			border: 3px darkgreen solid;
+			color: white;
+			margin-left: 2px;
+		}
+		button.blue {
+			background-color: blue;
+			border: 3px darkblue solid;
+			color: white;
+		}
 		span#card {
 			font-size: 1000%;
 			color: rgb(200,0,0);
@@ -25,7 +41,7 @@
 		span {
 			font-weight: bold;
 		}
-		div#flashcard {
+		div.table {
 			margin: 0 auto;
 			display: flex;
 			align-items: center;
@@ -66,19 +82,28 @@
 		input.not_answered {
 			outline-color: rgb(20,20,20);
 		}
+		div#flashcard {
+			display: none;
+		}
 	</style>
 </head>
 <body>
 	<div class="main">
-		<div id="flashcard">
-			<div>
-				<span id="card">START</span>
+		<div class="table">
+			<div id="menu">
+				<button class="blue">Old deck</button>
+				<button class="green">New deck</button>
 			</div>
-			<div class="meaning">
-				<span id="meaning">-----</span>
-			</div>
-			<div>
-				<input id="answer" class="not_answered" type="text" autocomplete="off">
+			<div id="flashcard">
+				<div>
+					<span id="card">START</span>
+				</div>
+				<div class="meaning">
+					<span id="meaning">-----</span>
+				</div>
+				<div>
+					<input id="answer" class="not_answered" type="text" autocomplete="off">
+				</div>
 			</div>
 		</div>
 	</div>
@@ -97,28 +122,56 @@
 		["Again", "De novo/Novamente", 0],
 		["Blue", "Azul", 0],
 		["Black", "Preto", 0],
-		["Yellow", "Amarelo", 0]
+		["Yellow", "Amarelo", 0],
+		["And", "e", 0],
+		["Or", "ou", 0],
+		["Row", "Linha/Fila", 0],
+		["Cup", "Xícara", 0],
+		["Welcome", "Bem-vindo", 0],
+		["Big", "Grande", 0],
+		["Answer", "Resposta", 0],
+		["Ask", "Pedir/Perguntar", 0],
 	];
 
 	shuffleArray(deck);
+
+	console.log(deck);
 
 	var card = document.getElementById("card");
 	var meaning = document.getElementById("meaning");
 	var answer = document.getElementById("answer");
 	
-	var pointer = -1;
+	var pointer = 0;
 	var limitInf = 0;
 	var limitSup = deck.length;
 	
 	var showMeaning = false;
+	var typeDeck = null;
 
+	document.getElementById("menu").children[0].addEventListener("click", function() {
+		show_flashcard();
+		update_card();
+		hide_meaning();
+		typeDeck = "old";
+	});
+	document.getElementById("menu").children[1].addEventListener("click", function() {
+		show_flashcard();
+		update_card();
+		hide_meaning();
+		typeDeck = "new";
+	});
+
+	function show_flashcard() {
+		document.getElementById("menu").style.display = "none";
+		document.getElementById("flashcard").style.display = "block";
+	}
 	function get_answers() {
-		var answerdeck = answer.value.toLowerCase();
-		return answerdeck.split("/");
+		var _answer = answer.value.toLowerCase();
+		return _answer.split("/");
 	}
 	function get_meanings() {
-		var meaningdeck = meaning.innerText.toLowerCase();
-		return meaningdeck.split("/");
+		var _meaning = meaning.innerText.toLowerCase();
+		return _meaning.split("/");
 	}
 
 	function is_answered() {
@@ -137,6 +190,8 @@
 
 		card.innerText = deck[pointer][0];
 		meaning.innerText = deck[pointer][1];
+
+		console.log(card.innerText);
 	}
 	function add_class(_element, _class) {
 		_element.classList.add(_class);
@@ -175,26 +230,6 @@
 		verifyAnswer = false;		
 	}
 	
-	function previous_word() {
-		pointer--;
-		if (pointer < limitInf) {
-			pointer = limitInf;
-		}
-		clear_answer();
-		hide_meaning();
-		update_card();
-	}
-	function next_word() {
-		pointer++;
-		if (pointer > limitSup) {
-			pointer = limitSup;
-			return;
-		}
-		clear_answer();
-		hide_meaning();
-		update_card();
-	}
-
 	// Algoritmo was get in the web
 	function shuffleArray(_array) {
 		for (var i = _array.length - 1; i > 0; i--) {
@@ -204,10 +239,6 @@
 			_array[j] = temp;
 		}
 	}
-
-
-
-
 
 	function verify_answer() {
 		answers = get_answers();
@@ -236,13 +267,31 @@
 		return true;
 	}
 
-
-
-	function eventFunction(_event) {
-		if (_event.key == "Enter" && !is_answered()) {
+	function previous_word() {
+		pointer--;
+		if (pointer < limitInf) {
+			pointer = limitInf;
+		}
+		clear_answer();
+		hide_meaning();
+		update_card();
+	}
+	function next_word() {
+		pointer++;
+		if (pointer > limitSup) {
+			pointer = limitSup;
 			return;
 		}
-		if (_event.key == "ArrowDown" || _event.key == "Enter") {
+		clear_answer();
+		hide_meaning();
+		update_card();
+	}
+
+	function eventOldDeck(_key) {
+		if (_key == "Enter" && !is_answered()) {
+			return;
+		}
+		if (_key == "ArrowDown" || _key == "Enter") {
 			if (pointer == limitSup) {
 				return;
 			}
@@ -267,9 +316,61 @@
 			}
 			console.log(deck[0], deck[1], deck[2], deck[3]);
 			next_word();
+
+			if (pointer == limitSup) {
+				update_database();
+			}
 		}
-		if (_event.key == "ArrowUp") {
+		if (_key == "ArrowUp") {
 			previous_word();
+		}
+	}
+
+	var counterNewDeck = 1;
+	function eventNewDeck(_key) {
+		if (_key == "Enter" && !is_answered()) {
+			return;
+		}
+		if (_key == "ArrowDown" || _key == "Enter") {
+			if (!showMeaning) {
+				show_meaning();
+				var correctAnswer = verify_answer();
+
+				if (correctAnswer) {
+					set_corret_answer();
+					deck[pointer][2] = 1;
+					return;
+				}
+
+				set_wrong_answer();
+				deck[pointer][2] = 0;
+				return;
+			}
+			
+			pointer++;
+			// Turn back 4 positions
+			if (pointer > counterNewDeck) {
+				counterNewDeck = pointer;
+				pointer = counterNewDeck - 4;
+				
+				if (pointer < limitInf) {
+					pointer = limitInf;
+				}
+			}
+			if (counterNewDeck > limitSup) {
+				pointer = limitSup;
+				return;
+			}
+			clear_answer();
+			hide_meaning();
+			update_card();
+		}
+	}
+	function eventFunction(_event) {
+		if (typeDeck == "old") {
+			eventOldDeck(_event.key);
+		} else {
+			eventNewDeck(_event.key);
 		}
 	}
 
