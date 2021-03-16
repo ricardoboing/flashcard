@@ -1,16 +1,16 @@
-Card,Meaning,Score,Consecutive hits,Consecutive miss
-Building,Prédio,0,-1,-1
-Apartment,Apartamento,0,-1,-1
-Life,Vida,0,-1,-1
-Toy,Brinquedo,0,-1,-1
-Honey,Mel,0,-1,-1
-OldDeck,,,,
-Die,Morrer,0,-1,-1
-Life,Vida,0,-1,-1
-Tomorrow,Amanhã,0,-1,-1
-Travel,Viajar,0,-1,-1
-Fly,Voar,0,-1,-1
-Apartment,Apartamento,0,-1,-1
-Honey,Mel,0,-1,-1
-Trip,Viagem,0,-1,-1
-Building,Prédio,0,-1,-1
+Card,Meaning,Score,Consecutive hits,Consecutive miss,Repeat word?
+Building,Prédio,1,-1,-1,
+Toy,Brinquedo,2,-1,-1,
+Life,Vida,3,-1,-1,
+Honey,Mel,4,-1,-1,
+Apartment,Apartamento,7,-1,-1,
+OldDeck,,,,,
+Life,Vida,4,0,-1,
+Honey,Mel,4,0,-1,
+Trip,Viagem,4,0,-1,
+Fly,Voar,5,0,-1,
+Building,Prédio,5,0,-1,
+Apartment,Apartamento,1,-1,0,
+Travel,Viajar,2,-1,0,
+Die,Morrer,4,-1,0,
+Tomorrow,Amanhã,6,-1,0,

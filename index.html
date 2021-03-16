@@ -121,8 +121,11 @@
 </script>
 -->
 <script type="text/javascript">
+	var LIMIT_WORD_FOR_DAY = 250;
+
 	var oldDeck = [];
 	var newDeck = [];
+	var deck = [];
 
 	var card = document.getElementById("card");
 	var meaning = document.getElementById("meaning");
@@ -132,27 +135,34 @@
 	var limitInf = 0;
 	var limitSup = 0;
 
-	var headerFile = "Card,Meaning,Score,Consecutive hits,Consecutive miss";
-	var deckSeparator = "OldDeck,,,,";
+	var headerFile = "Card,Meaning,Score,Consecutive hits,Consecutive miss,Repeat word?";
+	var deckSeparator = "OldDeck,,,,,";
 	
 	var showMeaning = false;
 	var typeDeck = null;
 
-	document.getElementById("menu").children[0].addEventListener("click", function() {
-		limitSup = oldDeck.length;
-		typeDeck = "old";
+	var finish = false;
+
+	function set_deck(_deck) {
+		for (var i = 0; i < LIMIT_WORD_FOR_DAY && _deck.length > 0; i++) {
+			deck[i] = _deck[0];
+			_deck.shift();
+		}
+		shuffleArray(deck);
+
+		limitSup = deck.length;
 
 		show_flashcard();
-		update_card(oldDeck);
+		update_card(deck);
 		hide_meaning();
+	}
+	document.getElementById("menu").children[0].addEventListener("click", function() {
+		set_deck(oldDeck);
+		typeDeck = "old";
 	});
 	document.getElementById("menu").children[1].addEventListener("click", function() {
-		limitSup = newDeck.length;
+		set_deck(newDeck);
 		typeDeck = "new";
-
-		show_flashcard();
-		update_card(newDeck);
-		hide_meaning();
 	});
 
 	document.getElementById('input_file').addEventListener('change', function() {
@@ -171,6 +181,41 @@
 
 		load_deck(newDeck, decks[0].split("\n"));
 		load_deck(oldDeck, decks[1].split("\n"));
+
+		check_repeat_word();
+	}
+	function check_repeat_word() {
+		var existsRepeat = false;
+
+		for (var i = 0; i < oldDeck.length; i++) {
+			for (var j = i+1; j < oldDeck.length; j++) {
+				if (oldDeck[i][1] == oldDeck[j][1]) {
+					oldDeck[i][6] = "*";
+					oldDeck[j][6] = "*";
+					existsRepeat = true;
+				}
+			}
+			for (var j = 0; j < newDeck.length; j++) {
+				if (oldDeck[i][1] == newDeck[j][1]) {
+					oldDeck[i][6] = "*";
+					newDeck[j][6] = "*";
+					existsRepeat = true;
+				}
+			}
+		}
+		for (var i = 0; i < newDeck.length; i++) {
+			for (var j = i+1; j < newDeck.length; j++) {
+				if (newDeck[i][1] == newDeck[j][1]) {
+					oldDeck[i][6] = "*";
+					oldDeck[j][6] = "*";
+					existsRepeat = true;
+				}
+			}
+		}
+
+		if (existsRepeat) {
+			alert("There are one or more repeated words. Please check the deck.");
+		}
 	}
 	function load_deck(_deck, _lines) {
 		for (var i = 1; i < _lines.length; i++) {
@@ -181,23 +226,26 @@
 			var line = _lines[i].split(",");
 			
 			// Card, Meaning, Hit/Miss, Score, Consecutive hits, Consecutives miss
-			var cardValue = [line[0], line[1], 2, parseInt(line[2]), parseInt(line[3]), parseInt(line[4])];
+			var cardValue = [line[0], line[1], 2, parseInt(line[2]), parseInt(line[3]), parseInt(line[4]), ""];
 			
 			_deck.push(cardValue);
 		}
 
-		console.log(_deck);
-		shuffleArray(_deck);
+		bubbleSort(_deck);
 	}
 	function update_database() {
 		var file_name = "database.csv";
 		var data = headerFile+"\n";
 
 		data += format_deck(newDeck);
-		data += deckSeparator+"\n";
+		if (typeDeck == "new") {
+			data += format_deck(deck);
+			data += deckSeparator+"\n";
+		} else {
+			data += deckSeparator+"\n";
+			data += format_deck(deck);
+		}
 		data += format_deck(oldDeck);
-
-		console.log(data);
 
 		const a = document.createElement("a");
 		const file = new Blob([data], {type: 'text/plain'});
@@ -217,6 +265,7 @@
 			var score = parseInt(_deck[i][3]);
 			var consecutiveHit = parseInt(_deck[i][4]);
 			var consecutiveMiss = parseInt(_deck[i][5]);
+			var repeated = _deck[i][6];
 
 			if (progress == 0) {
 				consecutiveHit = -1;
@@ -228,7 +277,7 @@
 				score += 2*(consecutiveHit+1);
 			}
 
-			data += word+","+meaning+","+score+","+consecutiveHit+","+consecutiveMiss+"\n";
+			data += word+","+meaning+","+score+","+consecutiveHit+","+consecutiveMiss+","+repeated+"\n";
 		}
 
 		return data;
@@ -304,18 +353,30 @@
 			_array[j] = temp;
 		}
 	}
+	// Algoritmo was get in the web
+	function bubbleSort(_array) {
+		n = _array.length;
 
-	function update_card(_deck) {
+		for (var i = 0; i < n; i++) {
+			for (var j = 0; j < n-i-1; j++) {
+				if (_array[j][3] > _array[j+1][3]) {
+					aux = _array[j];
+					_array[j] = _array[j+1];
+					_array[j+1] = aux;
+				}
+			}
+		}
+	}
+
+	function update_card() {
 		if (pointer == limitSup) {
 			card.innerText = "END";
 			meaning.innerText = "---";
 			return;
 		}
 
-		card.innerText = _deck[pointer][0];
-		meaning.innerText = _deck[pointer][1];
-
-		console.log(_deck[0],_deck[1]);
+		card.innerText = deck[pointer][0];
+		meaning.innerText = deck[pointer][1];
 	}
 	function verify_answer() {
 		answers = get_answers();
@@ -344,67 +405,112 @@
 		return true;
 	}
 
-	function previous_word(_deck) {
+	function previous_word() {
 		pointer--;
 		if (pointer < limitInf) {
 			pointer = limitInf;
 		}
 		clear_answer();
 		hide_meaning();
-		update_card(_deck);
+		update_card();
 	}
-	function next_word(_deck) {
-		pointer++;
-		if (pointer > limitSup) {
+	function next_old_deck() {
+		if (!finish) {
+			pointer++;
+		} else {
+			auxPointer = pointer+1;
 			pointer = limitSup;
-			return;
+
+			if (auxPointer >= limitSup) {
+				auxPointer = limitInf;
+			}
+			// Check words after the current
+			for (var i = auxPointer; i < limitSup; i++) {
+				if (deck[i][2] == 0) {
+					pointer = i;
+					break;
+				}
+			}
+			// If all after the word is ok, check the words before the current
+			if (pointer == limitSup) {
+				for (var i = 0; i <= auxPointer; i++) {
+					if (deck[i][2] == 0) {
+						pointer = i;
+						break;
+					}
+				}
+			}
 		}
+
 		clear_answer();
 		hide_meaning();
-		update_card(_deck);
+		update_card(deck);
 	}
-
-	function eventOldDeck(_key) {
+	function event_old_deck(_key) {
+		if (_key == "ArrowUp" && !finish) {
+			previous_word();
+			return;
+		}
 		if (_key == "Enter" && !is_answered()) {
 			return;
 		}
 		if (_key == "ArrowDown" || _key == "Enter") {
+			// Finished the deck and revision
 			if (pointer == limitSup) {
 				return;
 			}
-			if (pointer == -1) { // Start
-				next_word(oldDeck);
+			// First wrong word after finished the deck
+			if (pointer == limitInf-1) {
+				next_old_deck();
 				return;
 			}
-			
+			// The meaning still hidden and the answer has not been checked
 			if (!showMeaning) {
 				show_meaning();
 				var correctAnswer = verify_answer();
 
 				if (correctAnswer) {
 					set_corret_answer();
-					oldDeck[pointer][2] = 1;
-					return;
+					deck[pointer][2] = 1;
+				} else {
+					set_wrong_answer();
+					deck[pointer][2] = 0;
 				}
+			} else {
+				next_old_deck();
 
-				set_wrong_answer();
-				oldDeck[pointer][2] = 0;
-				return;
+				// Just finished the deck: repeat the wrong words and save the progress
+				if (pointer == limitSup && !finish) {
+					update_database();
+					finish = true;
+					pointer = limitInf-1;
+				}
 			}
-			console.log(oldDeck);
-			next_word(oldDeck);
-
-			if (pointer == limitSup) {
-				update_database();
-			}
-		}
-		if (_key == "ArrowUp") {
-			previous_word(oldDeck);
 		}
 	}
 
 	var counterNewDeck = 1;
-	function eventNewDeck(_key) {
+	function next_new_deck() {
+		pointer++;
+
+		// Turn back 8 positions
+		if (pointer > counterNewDeck) {
+			counterNewDeck = pointer;
+			pointer = counterNewDeck - 8;
+			
+			if (pointer < limitInf) {
+				pointer = limitInf;
+			}
+		}
+		if (counterNewDeck > limitSup) {
+			pointer = limitSup;
+		}
+
+		clear_answer();
+		hide_meaning();
+		update_card();
+	}
+	function event_new_deck(_key) {
 		if (_key == "Enter" && !is_answered()) {
 			return;
 		}
@@ -415,43 +521,25 @@
 
 				if (correctAnswer) {
 					set_corret_answer();
-					newDeck[pointer][2] = 1;
-					return;
+					deck[pointer][2] = 1;
+				} else {
+					set_wrong_answer();
+					deck[pointer][2] = 0;
 				}
+			} else {
+				next_new_deck();
 
-				set_wrong_answer();
-				newDeck[pointer][2] = 0;
-				return;
-			}
-			
-			pointer++;
-			// Turn back 4 positions
-			if (pointer > counterNewDeck) {
-				counterNewDeck = pointer;
-				pointer = counterNewDeck - 4;
-				
-				if (pointer < limitInf) {
-					pointer = limitInf;
+				if (pointer == limitSup) {
+					update_database();
 				}
 			}
-			if (counterNewDeck > limitSup) {
-				pointer = limitSup;
-				return;
-			}
-			if (pointer == limitSup) {
-				update_database();
-			}
-
-			clear_answer();
-			hide_meaning();
-			update_card(newDeck);
 		}
 	}
 	function eventFunction(_event) {
 		if (typeDeck == "old") {
-			eventOldDeck(_event.key);
+			event_old_deck(_event.key);
 		} else {
-			eventNewDeck(_event.key);
+			event_new_deck(_event.key);
 		}
 	}
 
