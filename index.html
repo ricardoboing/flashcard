@@ -25,6 +25,11 @@
 			border: 3px darkblue solid;
 			color: white;
 		}
+		textarea {
+			width: 100%;
+			height: 100px;
+			margin-top: 2px;
+		}
 		span#card {
 			font-size: 1000%;
 			color: rgb(200,0,0);
@@ -96,6 +101,9 @@
 			<div id="menu">
 				<button class="blue">Old deck</button>
 				<button class="green">New deck</button>
+				<div>
+					<textarea id="repeated_word" disabled></textarea>
+				</div>
 			</div>
 			<div id="flashcard">
 				<div>
@@ -121,7 +129,7 @@
 </script>
 -->
 <script type="text/javascript">
-	var LIMIT_WORD_FOR_DAY = 250;
+	var LIMIT_WORD_FOR_DAY = 200;
 
 	var oldDeck = [];
 	var newDeck = [];
@@ -130,12 +138,13 @@
 	var card = document.getElementById("card");
 	var meaning = document.getElementById("meaning");
 	var answer = document.getElementById("answer");
+	var repeatedWord = document.getElementById("repeated_word");
 	
 	var pointer = 0;
 	var limitInf = 0;
 	var limitSup = 0;
 
-	var headerFile = "Card,Meaning,Score,Consecutive hits,Consecutive miss,Repeat word?";
+	var headerFile = "Word,Meaning,Score,Consecutive hits,Consecutive miss,Repeat word?";
 	var deckSeparator = "OldDeck,,,,,";
 	
 	var showMeaning = false;
@@ -186,35 +195,44 @@
 	}
 	function check_repeat_word() {
 		var existsRepeat = false;
+		var repeatedWordList = "";
 
 		for (var i = 0; i < oldDeck.length; i++) {
 			for (var j = i+1; j < oldDeck.length; j++) {
-				if (oldDeck[i][1] == oldDeck[j][1]) {
+				if (oldDeck[i][0] == oldDeck[j][1]) {
 					oldDeck[i][6] = "*";
 					oldDeck[j][6] = "*";
+					
 					existsRepeat = true;
+					repeatedWordList += oldDeck[i][0]+"\n";
 				}
 			}
 			for (var j = 0; j < newDeck.length; j++) {
-				if (oldDeck[i][1] == newDeck[j][1]) {
+				if (oldDeck[i][0] == newDeck[j][1]) {
 					oldDeck[i][6] = "*";
 					newDeck[j][6] = "*";
+					
 					existsRepeat = true;
+					repeatedWordList += oldDeck[i][0]+"\n";
 				}
 			}
 		}
 		for (var i = 0; i < newDeck.length; i++) {
 			for (var j = i+1; j < newDeck.length; j++) {
-				if (newDeck[i][1] == newDeck[j][1]) {
+				if (newDeck[i][0] == newDeck[j][1]) {
 					oldDeck[i][6] = "*";
 					oldDeck[j][6] = "*";
+
 					existsRepeat = true;
+					repeatedWordList += newDeck[i][0]+"\n";
 				}
 			}
 		}
 
 		if (existsRepeat) {
 			alert("There are one or more repeated words. Please check the deck.");
+			repeatedWord.value = repeatedWordList;
+			console.log(repeatedWordList);
 		}
 	}
 	function load_deck(_deck, _lines) {
@@ -382,24 +400,23 @@
 		answers = get_answers();
 		meanings = get_meanings();
 
-		var correct = false;
+		if (answers.length != meanings.length) {
+			return false;
+		}
 
 		for (var i = 0; i < answers.length; i++) {
-			correct = false;
+			var correct = false;
+
 			for (var j = 0; j < meanings.length; j++) {
 				if (answers[i] == meanings[j]) {
 					correct = true;
 					break;
 				}
 			}
-			
+
 			if (!correct) {
 				return false;
 			}
-		}
-
-		if (!correct) {
-			return false;
 		}
 
 		return true;
@@ -493,10 +510,13 @@
 	function next_new_deck() {
 		pointer++;
 
-		// Turn back 8 positions
+		// Turn back positions
 		if (pointer > counterNewDeck) {
-			counterNewDeck = pointer;
-			pointer = counterNewDeck - 8;
+			if (!deck[counterNewDeck][2] == 0) {
+				counterNewDeck = pointer;
+			}
+			
+			pointer = counterNewDeck - 4;
 			
 			if (pointer < limitInf) {
 				pointer = limitInf;
